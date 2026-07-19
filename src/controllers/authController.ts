@@ -200,21 +200,41 @@ export const updateAvatar = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    const result = await uploadToCloudinary(req.file.path, 'nexus/avatars');
-    if (!result) {
+    let uploadResult: any = null;
+
+    if (req.file.buffer) {
+      // Serverless / memoryStorage path — upload buffer directly to Cloudinary
+      uploadResult = await new Promise((resolve, reject) => {
+        const { cloudinary } = require('../utils/cloudinary');
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'nexus/avatars', resource_type: 'auto' },
+          (error: any, result: any) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        stream.end(req.file!.buffer);
+      });
+    } else if (req.file.path) {
+      // Local dev / diskStorage path
+      uploadResult = await uploadToCloudinary(req.file.path, 'nexus/avatars');
+    }
+
+    if (!uploadResult) {
       res.status(500).json({ success: false, message: 'Failed to upload avatar' });
       return;
     }
 
     const user = await User.findByIdAndUpdate(
       req.user?._id,
-      { avatar: result.secure_url },
+      { avatar: uploadResult.secure_url },
       { new: true }
     );
 
-    res.status(200).json({ success: true, data: { avatar: result.secure_url, user } });
+    res.status(200).json({ success: true, data: { avatar: uploadResult.secure_url, user } });
   } catch (error: any) {
     if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
