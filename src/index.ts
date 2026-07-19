@@ -9,6 +9,7 @@ import { connectDB } from './config/db';
 import authRoutes from './routes/authRoutes';
 import projectRoutes from './routes/projectRoutes';
 import chatRoutes from './routes/chatRoutes';
+import itemRoutes from './routes/itemRoutes';
 
 // Load environment variables (no-op on Vercel where they're set via dashboard)
 dotenv.config();
@@ -64,6 +65,7 @@ app.use(async (_req, res, next) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/chat', chatRoutes);
+app.use('/api/v1/items', itemRoutes);
 
 // Health check
 app.get('/', (_req: Request, res: Response) => {
