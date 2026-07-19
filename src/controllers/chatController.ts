@@ -69,7 +69,7 @@ export const deleteMessage = async (req: AuthRequest, res: Response): Promise<vo
     
     const chat = await Chat.findOneAndUpdate(
       { project: projectId, user: req.user?._id },
-      { $pull: { messages: { _id: new mongoose.Types.ObjectId(messageId) } } },
+      { $pull: { messages: { _id: new mongoose.Types.ObjectId(String(messageId)) } } },
       { new: true }
     );
 
