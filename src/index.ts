@@ -50,6 +50,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// DB Connection Middleware (Crucial for Serverless + bufferCommands: false)
+app.use(async (_req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/projects', projectRoutes);
@@ -66,7 +76,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });
 
-// Connect DB then start server (dev only — Vercel handles the lifecycle itself)
+// Start server (dev only — Vercel handles the lifecycle itself)
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   connectDB()
     .then(() => {
@@ -77,11 +87,6 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     .catch((err) => {
       console.error('Failed to connect to DB:', err.message);
     });
-} else {
-  // In serverless (Vercel), connect lazily on first request
-  connectDB().catch((err) => {
-    console.error('Serverless DB connect failed:', err.message);
-  });
 }
 
 export default app;
